@@ -8,71 +8,83 @@
     <!-- Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://kit.fontawesome.com/c3c1353c4c.js" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body class="bg-gray-100">
     <!-- Connector untuk menghubungkan PHP dan SPARQL -->
     <?php
-        require_once("sparqllib.php");
-        $search = "" ;
-        
-        if (isset($_POST['search'])) {
-            $search = $_POST['search'];
-            $data = sparql_get(
-            "http://localhost:3030/music",
-            "
-                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                PREFIX ex: <http://example.org/>
-                PREFIX id: <https://songs.com/>
-                PREFIX item: <https://songs.com/ns/item#>
-                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+require_once("sparqllib.php");
 
-                SELECT ?Album ?Artist ?Ranking 
-                WHERE
-                { 
-                    ?items
-                        ex:id     ?Ranking ;
-                        ex:name   ?Album ;
-                        ex:value  ?Artist .
-                    FILTER 
-                    (regex(?Album, '$search', 'i') 
-                    || regex(?Artist, '$search', 'i'))
-                } LIMIT 100
-            "
-            );
-        } else {
-            $data = sparql_get(
-            "http://localhost:3030/music",
-            "
-                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                PREFIX ex: <http://example.org/>
-                PREFIX id: <https://songs.com/>
-                PREFIX item: <https://songs.com/ns/item#>
-                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+$search = "";
+$limit = 100;
+$offset = 0;
 
-                SELECT ?Album ?Artist ?Ranking 
-                WHERE
-                { 
-                    ?items
-                        ex:id     ?Ranking ;
-                        ex:name   ?Album ;
-                        ex:value  ?Artist .
-                } LIMIT 100
-            "
-            );
+if (isset($_POST['search'])) {
+    $search = $_POST['search'];
+}
+
+if (!empty($search)) {
+    $data = sparql_get(
+        "http://localhost:3030/music",
+        "
+        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX ex: <http://example.org/>
+        PREFIX id: <https://songs.com/>
+        PREFIX item: <https://songs.com/ns/item#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+        SELECT ?Album ?Artist ?Ranking 
+        WHERE
+        { 
+            ?items
+                ex:Album ?Album ;
+                ex:Artist ?Artist ;
+                ex:Ranking ?Ranking .
+            FILTER 
+            (regex(?Album, '$search', 'i') 
+            || regex(?Artist, '$search', 'i'))
         }
+        ORDER BY ASC(?Ranking)
+        LIMIT $limit OFFSET $offset
+        "
+    );
+} else {
+    $data = sparql_get(
+        "http://localhost:3030/music",
+        "
+        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX ex: <http://example.org/>
+        PREFIX id: <https://songs.com/>
+        PREFIX item: <https://songs.com/ns/item#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-        if (!isset($data)) {
-            print "<p>Error: " . sparql_errno() . ": " . sparql_error() . "</p>";
+        SELECT ?Album ?Artist ?Ranking 
+        WHERE
+        { 
+            ?items
+                ex:Album ?Album ;
+                ex:Artist ?Artist ;
+                ex:Ranking ?Ranking .
         }
-    ?>
+        ORDER BY ASC(?Ranking)
+        LIMIT $limit OFFSET $offset
+        "
+    );
+}
+
+if (!isset($data)) {
+    print "<p>Error: " . sparql_errno() . ": " . sparql_error() . "</p>";
+}
+?>
+
 
     <!-- Navbar -->
     <header class="bg-cover bg-center h-screen" style="background-image: url('https://cdn.builder.io/api/v1/image/assets/TEMP/fb6e7ec23db3b681c46d0add7ed977dd473372d538623f0b9775c8294338ea35?apiKey=5f3f9868d33e49c796f9c1903489545e');">
         <div class="flex flex-col items-center justify-center h-full bg-black bg-opacity-50">
             <nav class="flex justify-center space-x-4 text-xl text-white">
-                <a href="index.php" class="px-4 py-2 rounded hover:bg-gray-700">Home</a>
+                <a href="index_a.php" class="px-4 py-2 rounded hover:bg-gray-700">Home</a>
                 <a href="about.php" class="px-4 py-2 rounded hover:bg-gray-700">About</a>
             </nav>
             <h1 class="mt-10 text-7xl font-bold text-white">TOP MUSIC</h1>
@@ -96,8 +108,20 @@
                     <span>Menampilkan hasil pencarian untuk <b>"<?php echo htmlentities($search); ?>"</b></span>
                 </div>
             <?php endif; ?>
+
+            <!-- Button for Top 5000 Albums of All Time Dataset by RYM website -->
+         <section class="flex justify-end my-1">
+            <button 
+                onclick="window.location.href='index_b.php'" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"> Top 5000 Albums
+            </button>
+        </section>
+        
+            <h2 class="mt-10 text-7xl font-bold text-gray flex justify-center">Best Selling Albums</h2>
+            <br>
+            <br>
+
             <div class="overflow-x-auto">
-                <table class="min-w-full bg-white">
+                <table id="albumsTable" class="min-w-full bg-white">
                     <thead class="bg-gray-800 text-white">
                         <tr>
                             <th class="px-4 py-2">Rank</th>
@@ -116,9 +140,13 @@
                     </tbody>
                 </table>
             </div>
+
+            <div class="flex justify-center my-4">
+                <button id="showMoreBtn" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700">Show More Data</button>
+            </div>
         </section>
         <br>
-        
+
         <div class="flex flex-col justify-center">
             <header class="flex flex-col px-20 py-9 w-full bg-gray-600 max-md:px-5 max-md:max-w-full">
                 <nav class="flex gap-5 max-md:flex-wrap max-md:max-w-full">
@@ -132,5 +160,26 @@
             </header>
         </div>
     </main>
+
+    <script>
+        let offset = <?php echo $limit; ?>;
+        const limit = <?php echo $limit; ?>;
+        
+        document.getElementById('showMoreBtn').addEventListener('click', function() {
+            $.ajax({
+                url: 'load_more.php',
+                type: 'POST',
+                data: {
+                    offset: offset,
+                    limit: limit,
+                    search: "<?php echo $search; ?>"
+                },
+                success: function(response) {
+                    $('#albumsTable tbody').append(response);
+                    offset += limit;
+                }
+            });
+        });
+    </script>
 </body>
 </html>

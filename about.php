@@ -14,7 +14,7 @@
     <header class="bg-cover bg-center h-screen" style="background-image: url('https://cdn.builder.io/api/v1/image/assets/TEMP/fb6e7ec23db3b681c46d0add7ed977dd473372d538623f0b9775c8294338ea35?apiKey=5f3f9868d33e49c796f9c1903489545e');">
         <div class="flex flex-col items-center justify-center h-full bg-black bg-opacity-50">
             <nav class="flex justify-center space-x-4 text-xl text-white">
-                <a href="index.php" class="px-4 py-2 rounded hover:bg-gray-700">Home</a>
+                <a href="index_a.php" class="px-4 py-2 rounded hover:bg-gray-700">Home</a>
                 <a href="about.php" class="px-4 py-2 rounded hover:bg-gray-700">About</a>
             </nav>
             <h1 class="mt-10 text-7xl font-bold text-white">TOP MUSIC</h1>
